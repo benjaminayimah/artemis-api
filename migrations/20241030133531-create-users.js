@@ -14,6 +14,10 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
+      displayName: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
       email: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -23,9 +27,13 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      picture: {
+      image: {
         type: Sequelize.STRING,
         allowNull: true,
+      },
+      bio: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
       color: {
         type: Sequelize.STRING,
@@ -36,6 +44,11 @@ module.exports = {
         allowNull: true
       },
       verified: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      hasUpgraded: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false,
@@ -68,6 +81,7 @@ module.exports = {
 
 // npx sequelize-cli db:migrate 
 // npx sequelize-cli db:migrate:undo
+// npx sequelize-cli db:migrate:undo:all
 
 // npx knex migrate:rollback   
 

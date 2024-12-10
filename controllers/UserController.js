@@ -1,5 +1,9 @@
 const User = require('../models/User');
 const Agent = require('../models/Agent');
+const { deleteFile } = require('../utils/DeleteFileTrait');
+const { validationResult } = require('express-validator');
+
+const { isUsernameUnique } = require('../middlewares/validationMiddleware')
 
 
 const getUser = async (req, res) => {
@@ -29,7 +33,7 @@ const getUserByUsername = async (req, res) => {
         });
 
         const user = await User.findByPk(userId.id, {
-            attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+            attributes: { exclude: ['password', 'googleId', 'createdAt', 'updatedAt'] },
             include: {
                 model: Agent,
                 as: 'agents',
@@ -54,7 +58,17 @@ const getUserByUsername = async (req, res) => {
 // Controller to get all users
 const getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll();
+        const users = await User.findAll({
+            attributes: { exclude: ['password', 'googleId', 'updatedAt'] },
+            limit: 50,
+            order: [['createdAt', 'DESC']],
+            include: {
+                model: Agent,
+                as: 'agents',
+                separate: true,
+                order: [['createdAt', 'DESC']],
+            }
+        });
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -78,22 +92,49 @@ const getUserById = async (req, res) => {
 
 // Controller to update a user by ID
 const updateUser = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+    }
     try {
-        const { id } = req.params;
-        const { username, email, password } = req.body;
+        const { id, username, displayName, bio, image } = req.body;
         const user = await User.findByPk(id);
+
         if (user) {
+            const newImage = image?.split('/').pop();
+            const oldImage = user.image?.split('/').pop();
+
             user.username = username;
-            user.email = email;
-            user.password = password;
+            user.displayName = displayName;
+            user.image = image;
+            user.bio = bio;
             await user.save();
-            res.status(200).json(user);
+
+            if (oldImage && (oldImage != newImage)) {
+                await deleteFile(oldImage);
+            }
+
+            res.status(200).json({ user: user, message: 'Profile has been updated'});
         } else {
             res.status(404).json({ error: 'User not found' });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+};
+
+
+// Controller to validate username
+const validateUsername = async (req, res) => {
+
+    const username = req.params.username
+    const userId = req.userId
+
+    const isUnique = await isUsernameUnique(username, userId);
+    if (!isUnique) {
+        return res.status(200).json({ status: 'error', message: 'Username already exists.' });
+    }
+    return res.status(200).json({ status: 'success', message: `<strong>${username}</strong> is available` });
 };
 
 // Controller to delete a user by ID
@@ -118,5 +159,6 @@ module.exports = {
     getUserById,
     getUserByUsername,
     updateUser,
-    deleteUser
+    deleteUser,
+    validateUsername
 };

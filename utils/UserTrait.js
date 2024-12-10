@@ -34,4 +34,34 @@ module.exports = {
         }
         return result;
     },
+    generateNum: (length) => {
+        const characters = '0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += characters[Math.floor(Math.random() * characters.length)];
+        }
+        return result;
+    },
+    getRandomName: () => {
+        const colors = [
+            'SnuggleFox',
+            'FrostyPanda',
+            'GlimmerShark',
+            'PuddleDuck',
+            'FluffyCircuit',
+            'BlinkWizard',
+            'PeppySprout',
+            'DataPanda',
+            'ByteCrafter',
+            'DebugWizard',
+            'GigaBytee',
+            'WaffleBlimp',
+            'JellyBeaner',
+            'PixelWizard',
+            'AstroPeach',
+            'HoneyPot'
+        ];
+        const randomIndex = Math.floor(Math.random() * colors.length);
+        return colors[randomIndex];
+    },
 };

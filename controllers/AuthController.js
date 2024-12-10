@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
 
-const { getRandomColor } = require('../utils/ColorTrait');
+const { getRandomColor, getRandomName, generateNum } = require('../utils/UserTrait');
 const passport = require('passport');
 // require('../middlewares/oauthMiddleware')
 
@@ -19,27 +19,20 @@ const signUp = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(422).json({ errors: errors.array() });
     }
+    const newUser = await createUniqueUser(req.body);
     
-    const {  email, password } = req.body;
-    const color = getRandomColor()
-    const picture = null
-    try {
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
-        const newUser = await User.create({
-            username: email,
-            email,
-            password: hashedPassword,
-            color,
-            picture
-        });
-        res.status(201).json({ message: 'User created successfully', user: newUser });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
+    res.status(201).json({ message: 'User created successfully', user: newUser });
 };
+
+
+
+
+
+
+
+
+
+
 
 // Sign in
 const signIn = async (req, res) => {
@@ -63,7 +56,7 @@ const signIn = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid password' });
         }
-        // Create JWT token
+        // Create Auth JWT token
         const token = createToken({ id: user.id, email: user.email })
         res.status(200).json({ message: 'Sign in successful', token });
     } catch (error) {
@@ -71,10 +64,53 @@ const signIn = async (req, res) => {
     }
 };
 
-// Create JWT token
+// Create Auth JWT token
 const createToken = (user) => {
     return jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
+
+//create unique user
+
+// Utility function to generate a unique username and create the user
+async function createUniqueUser(user) {
+    let displayName;
+    let randNum;
+    let newUser;
+
+    const hashedPassword = user?.password ? await bcrypt.hash(user.password, 10) : null
+
+    while (true) {
+        try {
+            displayName = getRandomName()
+            randNum = generateNum(5)
+            const username = displayName + randNum
+
+            const image = user.image || user.picture
+
+            newUser = await User.create({
+                username: username,
+                displayName: username,
+                password: hashedPassword,
+                email: user.email,
+                image: image || null,
+                color: getRandomColor(),
+                googleId: user.id || null,
+                verified: user.email_verified || false
+            });
+
+            break; // Exit loop if successful
+        } catch (error) {
+            if (error.name === 'SequelizeUniqueConstraintError') {
+                continue; 
+            }
+
+            console.error(error);
+            break;
+        }
+    }
+    return newUser; // Return the created user
+}
+
 
 
 
@@ -92,6 +128,7 @@ const googleCallback = (req, res, next) => {
             `);
         }
         if(user) {
+            console.log(user)
             const newUser = await createOauthUser(user);
             const token = createToken({ id: newUser.id, email: newUser.email })
 
@@ -112,19 +149,17 @@ const googleCallback = (req, res, next) => {
 // Controller function to handle user creation
 
 async function createOauthUser(profile) {
-    const [user, created] = await User.findOrCreate({
-        where: { googleId: profile.id },
-        defaults: {
-            username: profile.displayName,
-            email: profile.email,
-            picture: profile.picture,
-            color: getRandomColor(),
-            googleId: profile.id,
-            verified: true
-        }
+    const user = await User.findOne({
+        where: { googleId: profile.id }
     });
-    return user
+
+    if (user) {
+        return user;
+    } else {
+        return await createUniqueUser(profile);
+    }
 }
+
 
 //     if (window.name === 'oauth_popup') {
                 //         window.opener.postMessage(

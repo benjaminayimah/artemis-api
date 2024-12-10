@@ -27,13 +27,38 @@ const validateRegister = [
         .notEmpty().withMessage('Password is required.')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
 ];
+const validateUsernameInput = [
+    body('displayName')
+        .notEmpty().withMessage('Display name field is required.'),
+    body('username')
+        .notEmpty().withMessage('Username is required.')
+        .isLength({ min: 3 }).withMessage('Username must be at least 3 characters long.')
+        .custom(async (username, { req }) => {
+            const userId = req.body.id;
+            const isUnique = await isUsernameUnique(username, userId);
+            if (!isUnique) {
+                throw new Error('Username already exists.');
+            }
+            return true;
+        })
+];
 
 const isEmailUnique = async (email) => {
     const user = await User.findOne({ where: { email } }); // Using Sequelize ORM
-    return !user; // Return true if the email is not found (i.e., unique)
+    return !user;
 };
+
+async function isUsernameUnique(username, userId) {
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+        return true; // Username does not exist
+    }
+    return user.id === userId; 
+}
 
 module.exports = {
     validateSignIn,
     validateRegister,
+    validateUsernameInput,
+    isUsernameUnique
 };

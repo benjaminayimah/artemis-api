@@ -1,6 +1,6 @@
 'use strict';
 const bcrypt = require('bcryptjs');
-const { getRandomColor } = require('../utils/ColorTrait')
+const { getRandomColor } = require('../utils/UserTrait')
 
 
 /** @type {import('sequelize-cli').Migration} */
@@ -9,12 +9,14 @@ module.exports = {
     await queryInterface.bulkInsert('users', [
       {
         username: 'JohnDoe1234',
+        displayName: 'John Doe',
         email: 'johndoe@example.com',
         password: await bcrypt.hash('123456#@!', 10),
-        picture: null,
+        image: null,
         color: getRandomColor(),
         googleId: null,
         verified: true,
+        hasUpgraded: true,
         createdAt: new Date(),
         updatedAt: new Date()
       }

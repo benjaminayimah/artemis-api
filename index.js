@@ -144,7 +144,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/api', chatRoutes)
-app.use('/api', uploadRoutes)
+app.use('/api/file', uploadRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/agent', agentRoutes)

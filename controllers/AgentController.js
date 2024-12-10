@@ -1,7 +1,9 @@
 const Agent = require('../models/Agent');
 const User = require('../models/User')
 const jwt = require('jsonwebtoken');
-const { generateUniqueId } = require('../utils/ColorTrait');
+const { generateUniqueId } = require('../utils/UserTrait');
+const { deleteFile } = require('../utils/DeleteFileTrait');
+
 
 
 // Controller to create a new Agent
@@ -53,6 +55,9 @@ const updateAgent = async (req, res) => {
         });
 
         if (agent) {
+            const newImage = image?.split('/').pop();
+            const oldImage = agent.image?.split('/').pop();
+
             agent.agentName = agentName;
             agent.instructions = instructions;
             agent.description = description;
@@ -61,6 +66,10 @@ const updateAgent = async (req, res) => {
             agent.image = image;
             agent.visibility = visibility;
             await agent.save();
+
+            if (oldImage && (oldImage != newImage)) {
+                await deleteFile(oldImage);
+            }
 
             res.status(200).json({ message: 'Agent has been updated'});
         } else {
@@ -124,13 +133,20 @@ const getAgentById = async (req, res) => {
 
 // Controller to delete a user by ID
 const deleteAgent = async (req, res) => {
+
+
     try {
         const { id } = req.params;
         const agent = await Agent.findByPk(id);
 
+    // return res.status(200).json({ message: agent });
+
+
         if (!agent) {
             return res.status(404).json({ error: 'Agent not found' });
         }
+        const image = agent.image?.split('/').pop();
+        image ? await deleteFile(image) : ''
 
         await agent.destroy();
 
@@ -150,7 +166,7 @@ const getAllAgents = async (req, res) => {
             include: {
                 model: User,
                 as: 'user',
-                attributes: ['username', 'picture', 'color']
+                attributes: ['username', 'image', 'color']
             },
             order: [['createdAt', 'DESC']],
             where: { visibility: 'public' },

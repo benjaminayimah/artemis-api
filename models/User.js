@@ -16,6 +16,10 @@ const User = sequelize.define('User', {
         allowNull: false,
         unique: true,
     },
+    displayName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     email: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -28,9 +32,13 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    picture: {
+    image: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    bio: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     color: {
       type: DataTypes.STRING,
@@ -46,7 +54,15 @@ const User = sequelize.define('User', {
         defaultValue: false,
         validate: {
             isIn: [[true, false]]
-        },
+        }
+    },
+    hasUpgraded: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        validate: {
+            isIn: [[true, false]]
+        }
     }
 
 }, {

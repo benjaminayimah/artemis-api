@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs')
+
+const { deleteFile } = require('../utils/DeleteFileTrait');
 
 
 exports.uploadImage =  async (req, res) => {
@@ -13,19 +13,16 @@ exports.uploadImage =  async (req, res) => {
 
 exports.deleteImage = async (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, '../uploads', filename);
 
-    // Check if the file exists
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-        if (err) {
-            return res.status(404).json({ message: 'File not found' });
+    try {
+        const result = await deleteFile(filename);
+
+        if (result.success) {
+            return res.status(200).json({ message: result.message });
+        } else {
+            return res.status(404).json({ message: result.message });
         }
-        // Delete the file
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                return res.status(500).json({ message: 'Failed to delete the file' });
-            }
-            return res.status(200).json({ message: 'File deleted successfully' });
-        });
-    });
+    } catch (error) {
+        return res.status(500).json({ message: 'An unexpected error occurred', error: error.message });
+    }
 }
